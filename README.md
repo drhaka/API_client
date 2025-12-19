@@ -9,7 +9,8 @@ Small Python project for interacting with an HTTP API, handling JSON responses, 
 ## Install
 ```bash
 pip install -r requirements.txt
-
+```
 ## Usage
 ```bash
 api_client.py http://example.org:3000/
+```

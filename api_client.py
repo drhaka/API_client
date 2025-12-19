@@ -81,7 +81,7 @@ def claimFlag(verification):
         flag = str(f.get("flag"))
     except:
         raise fanIntersect("flag waived")
-    if flag.isprintable():
+    if len(flag) > 1 and re.fullmatch(r"[a-zA-Z0-9_{}-]+", flag):
         return flag
     else: raise fanIntersect("flag suspect")
 

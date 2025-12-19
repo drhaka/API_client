@@ -8,9 +8,11 @@ Small Python project for interacting with an HTTP API, handling JSON responses, 
 
 ## Install
 ```bash
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 ## Usage
 ```bash
-api_client.py http://example.org:3000/
+python api_client.py http://example.org:3000/
 ```

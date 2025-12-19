@@ -52,7 +52,7 @@ def apiREQ(req, content=None, headers=None, method="POST"):
 
 def getToken():
     try: 
-        t = apiREQ("api/token")
+        t = apiREQ("/api/token")
         token = str(t["token"])
     except:
         raise fanIntersect("token retrieval failed")
@@ -64,7 +64,7 @@ def getToken():
 def verifyToken(token):
     try:
         auth_header={"Authorization": f"Bearer {token}"}
-        v = apiREQ("api/verify", headers=auth_header)
+        v = apiREQ("/api/verify", headers=auth_header)
         secret_str = str(v.get("secret"))
     except:
             raise fanIntersect("Verification error")
@@ -77,7 +77,7 @@ def verifyToken(token):
 def claimFlag(verification):
     trust, verify = verification[::]
     try:
-        f = apiREQ("api/flag", headers=trust, content=verify)
+        f = apiREQ("/api/flag", headers=trust, content=verify)
         flag = str(f.get("flag"))
     except:
         raise fanIntersect("flag waived")

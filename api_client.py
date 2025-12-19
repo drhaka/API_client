@@ -1,85 +1,95 @@
 import json
 import requests
 import time
+import sys
+import re
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
-base_url = "http://10.3.10.104:3000/"
 wait=5
 debug=False
 
 def fanIntersect(excr):
-    print(excr)
+    if len(excr) > 1: print(excr)
     raise SystemExit(1)
+
+if len(sys.argv) > 1 and re.fullmatch(r"[a-zA-Z0-9:/._-]+", sys.argv[1]):
+    base_url = sys.argv[1]
+else:
+    print("Automated flag retrieval system v1.01\nPlease provide URL for API server as argument.")
+    raise fanIntersect("")
 
 def parseJSON(data):
     try:
-        response: object = json.loads(data.text)   
-        return response
+        response = json.loads(data.text) 
     except:
-        fanIntersect("JSON parser failed")   
-
-def printResponse(sonjay):
-    if isinstance(sonjay, dict):
-        print(json.dumps(sonjay, indent=2))
-    else:
-        print(sonjay)    
+        raise fanIntersect("JSON parser failed")   
+    if isinstance(response, dict): 
+        if debug == True: print(json.dumps(response, indent=2)) 
+        return response
+    else: raise fanIntersect("JSON parser failed") 
 
 def apiREQ(req, content=None, headers=None, method="POST"):
     try:
         if debug == True: 
-            print("req:",req,"content:", content, "headers:", headers)
+            print("REQ:",req,"CONTENT:", content, "HEADERS:", headers)
         if method == "POST":
             r = requests.post(base_url + req, json=content, headers=headers, timeout=wait)
         elif method == "GET":  
             r = requests.get(base_url + req, timeout=wait)
-        if debug == True: 
-            printResponse(parseJSON(r))
         content_type = str(r.headers.get("Content-Type"))
         status_code = int(r.status_code)
-        if status_code < 300 and "application/json" in content_type:
-            return parseJSON(r)
-        else:
-            raise RuntimeError
-    except ReadTimeout:
-        fanIntersect("Server timed out")
-    except ConnectTimeout:
-        fanIntersect("Connection timed out")
-    except RuntimeError:
-        fanIntersect("Invalid response")
+    except ReadTimeout, ConnectTimeout:
+        raise fanIntersect("Connection time out")
+    except RuntimeError, ValueError:
+        raise fanIntersect("Request failed")
     except:
-        fanIntersect(r'¯\(ツ)/¯')
-    
-def getToken():
-    token = apiREQ("api/token")
-    if isinstance(token, dict):
-        return str(token.get("token"))
+        raise fanIntersect(r'¯\(ツ)/¯')
+    if status_code < 300 and "application/json" in content_type:
+        return parseJSON(r)
     else:
-        fanIntersect("token error")
+        raise fanIntersect("invalid response")
+
+
+def getToken():
+    try: 
+        t = apiREQ("api/token")
+        token = str(t["token"])
+    except:
+        raise fanIntersect("token retrieval failed")
+    if token.isalnum() and len(token) == 36:
+        return token
+    else:
+        raise fanIntersect("token suspect")
 
 def verifyToken(token):
-    token_string = "Bearer " + str(token)
-    auth_header={"Authorization": token_string}
     try:
+        auth_header={"Authorization": f"Bearer {token}"}
         v = apiREQ("api/verify", headers=auth_header)
-        secret = {"secret": str(v.get("secret"))}    
-        return (auth_header, secret)
+        secret_str = str(v.get("secret"))
     except:
-            fanIntersect("Verification error")
+            raise fanIntersect("Verification error")
+    if secret_str.isalnum() and len(secret_str) == 32:
+        secret = {"secret": secret_str}
+        return (auth_header, secret)
+    else:
+        raise fanIntersect("secret suspect")
 
 def claimFlag(verification):
     trust, verify = verification[::]
     try:
-        response = apiREQ("api/flag",content=verify, headers=trust)
-        flag = response.get("flag")
-        return str(flag)
+        f = apiREQ("api/flag", headers=trust, content=verify)
+        flag = str(f.get("flag"))
     except:
-        fanIntersect("No claim")
+        raise fanIntersect("flag waived")
+    if flag.isprintable():
+        return flag
+    else: raise fanIntersect("flag suspect")
 
 def decorateFlag(flag):
-    ornament = "\n" + "*" * (len(flag)+4) + "\n"
-    ornament += "*" + f" {flag} " + "*\n"
-    ornament += "*" * (len(flag)+4) + "\n"
-    return str(ornament)
+    ornament  =  ""  + "*" * (len(flag)+4) + "\n"
+    ornament +=  "*" + f" {flag} "         + "*\n"
+    ornament +=  "*" * (len(flag)+4)       + "\n"
+    return ornament
 
 stopwatch = time.time()
                    
